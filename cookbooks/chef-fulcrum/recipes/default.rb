@@ -27,49 +27,35 @@ end
 ##################################################
 #include_recipe "yum::remi"
 include_recipe "yum::default"
-execute "sudo yum update -y"
+#execute "sudo yum update -y"
 execute "sudo rpm --import https://fedoraproject.org/static/0608B895.txt"
 execute "sudo rpm -Uvh http://download-i2.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm"
-
-##################################################
-# 依存パッケージのインストール
-##################################################
-#yum_repository "epel-qt48" do
-#	description "Software Collection for Qt 4.8"
-#	url "http://repos.fedorapeople.org/repos/sic/qt48/epel-$releasever/$basearch/"
-#	enabled 1
-#end
-
-#package "qt48-qt-webkit-devel"
-
-#bash "setup qt48" do
-#	user "root"
-#	group "root"
-#	code <<-EOC
-#		ln -s /opt/rh/qt48/root/usr/include/QtCore/qconfig-64.h  /opt/rh/qt48/root/usr/include/QtCore/qconfig-x86_64.h
-#	EOC
-#	creates "/opt/rh/qt48/root/usr/include/QtCore/qconfig-x86_64.h"
-#end
-
-#ENV['PATH'] = "/opt/rh/qt48/root/usr/bin:/opt/rh/qt48/root/usr/lib64/qt4/bin/:#{ENV['PATH']}"
-
-package "nodejs" do
-	options("--enablerepo=epel")
-end
 
 %w{git libxml2-devel libxslt-devel postgresql-devel}.each do |pkg|
 	package pkg
 end
 
-execute "sudo /usr/local/rvm/bin/rvm install 2.0.0"
-execute "sudo /usr/local/rvm/bin/rvm use 2.0.0 --default"
-
-
 ##################################################
-# ruby gemの依存パッケージ追加
+# 依存パッケージのインストール
 ##################################################
-gem_package "bundler"
-gem_package "execjs"
+yum_repository "epel-qt48" do
+	description "Software Collection for Qt 4.8"
+	url "http://repos.fedorapeople.org/repos/sic/qt48/epel-$releasever/$basearch/"
+	enabled true
+end
+
+package "qt48-qt-webkit-devel"
+
+bash "setup qt48" do
+	user "root"
+	group "root"
+	code <<-EOC
+	ln -s /opt/rh/qt48/root/usr/include/QtCore/qconfig-64.h /opt/rh/qt48/root/usr/include/QtCore/qconfig-x86_64.h
+	EOC
+	creates "/opt/rh/qt48/root/usr/include/QtCore/qconfig-x86_64.h"
+end
+
+ENV['PATH'] = "/opt/rh/qt48/root/usr/bin:/opt/rh/qt48/root/usr/lib64/qt4/bin/:#{ENV['PATH']}"
 
 
 ##################################################
@@ -83,15 +69,23 @@ git "/home/vagrant/fulcrum" do
 	group "vagrant"
 end
 
+
+
 ##################################################
 # fulcrumで利用する依存ruby gemパッケージ追加
 ##################################################
+execute "sudo /usr/local/rvm/bin/rvm install 2.0.0"
+gem_package "bundler"
+gem_package "execjs"
+
 bash "install depends on fulcrum" do
 	user "vagrant"
 	group "vagrant"
 	cwd "/home/vagrant/fulcrum"
+	flags "--login"
 	
 	code <<-EOC
+		rvm use 2.0.0 --default
 		bundle install --path=vendor/bundle
 	EOC
 end
