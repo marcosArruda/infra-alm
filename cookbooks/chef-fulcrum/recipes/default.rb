@@ -31,7 +31,7 @@ include_recipe "yum::default"
 execute "sudo rpm --import https://fedoraproject.org/static/0608B895.txt"
 execute "sudo rpm -Uvh http://download-i2.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm"
 
-%w{git libxml2-devel libxslt-devel postgresql-devel}.each do |pkg|
+%w{git libxml2-devel libxslt-devel postgresql-devel mysql-devel ruby-devel}.each do |pkg|
 	package pkg
 end
 
@@ -44,7 +44,9 @@ yum_repository "epel-qt48" do
 	enabled true
 end
 
-package "qt48-qt-webkit-devel"
+execute "sudo yum -y update"
+execute "sudo yum -y install localinstall --nogpgcheck qt48-qt-webkit-devel"
+#package "qt48-qt-webkit-devel"
 
 bash "setup qt48" do
 	user "root"
@@ -97,8 +99,10 @@ bash "setup fulcrum" do
 	user "vagrant"
 	group "vagrant"
 	cwd "/home/vagrant/fulcrum"
+	flags "--login"
 	
 	code <<-EOC
+		rvm use 2.0.0 --default
 		bundle exec rake fulcrum:setup db:setup
 	EOC
     
@@ -112,8 +116,10 @@ bash "start rails" do
 	user "vagrant"
 	group "vagrant"
 	cwd "/home/vagrant/fulcrum"
+	flags "--login"
 	
 	code <<-EOC
+	rvm use 2.0.0 --default
         ./script/rails server -d
 	EOC
 end
